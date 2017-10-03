@@ -1,11 +1,11 @@
 //! Read InfraTec .irb thermal image files.
 //!
-//! This is a reverse-engineered library, based on [riri](https://sourceforge.net/projects/riri/).
-//! Riri wasn't correct anymore, so we've done some legwork to make the library work for the data
-//! that we have. YMMV.
+//! For now, we can't actually read .irb files themselves. It's a closed format and I can't find a
+//! reference anywhere on the internet. I'm hoping to get in touch with InfraTec and get a format
+//! definition from them.
 //!
-//! I'm working to communicate with InfraTec to get a format definition, so I can make this library
-//! actually correct rather than guesswork.
+//! Until then, we *can* read text files exportd by InfraTec software, an example of which is in
+//! `data/image.txt`.
 
 #![deny(missing_docs,
         missing_debug_implementations, missing_copy_implementations,
@@ -14,22 +14,14 @@
         unstable_features,
         unused_import_braces, unused_qualifications)]
 
-extern crate byteorder;
-
-pub mod file;
+pub mod text;
 mod image;
-mod utils;
 
-pub use file::File;
 pub use image::Image;
 
 /// Our custom error enum.
 #[derive(Debug)]
 pub enum Error {
-    /// A fixed-length string has an interior nul byte.
-    InteriorNulByte(Vec<u8>),
-    /// The file magic number is invalid.
-    InvalidHeader([u8; 5]),
     /// Wrapper around `std::io::Error`.
     Io(std::io::Error),
 }
