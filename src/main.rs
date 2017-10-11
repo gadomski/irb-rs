@@ -39,10 +39,10 @@ fn main() {
             println!("{}", image[(y, x)]);
         } else {
             panic!("Coordinates ({}, {}) out of image dimensions {} x {}",
-                   y,
                    x,
-                   image.height,
-                   image.width);
+                   y,
+                   image.width,
+                   image.height);
         }
     }
 }
