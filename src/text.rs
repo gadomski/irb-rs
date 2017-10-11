@@ -89,7 +89,7 @@ impl File {
         let mut rows = 0;
         for line in self.reader.lines() {
             let mut cols = 0;
-            for text in line?.split_whitespace() {
+            for text in line?.replace(';', " ").split_whitespace() {
                 let n = text.replace(',', ".").parse()?;
                 data.push(n);
                 cols += 1;
@@ -172,6 +172,7 @@ mod tests {
     #[test]
     fn open() {
         File::open("data/image.txt").unwrap();
+        File::open("data/image2.csv").unwrap();
     }
 
     #[test]
@@ -187,5 +188,13 @@ mod tests {
         assert!((image[(767, 1023)] - -37.49).abs() < 1e-2,
                 "Pixel was: {}",
                 image[(767, 1023)]);
+
+        let image2 = File::open("data/image2.csv").unwrap().into_image().unwrap();
+        assert_eq!(1024, image2.width);
+        assert_eq!(768, image2.height);
+        assert!((image2[(0, 0)] - -38.64).abs() < 1e-2);
+        assert!((image2[(0, 1)] - -38.74).abs() < 1e-2);
+        assert!((image2[(1, 0)] - -39.15).abs() < 1e-2);
+        assert!((image2[(767, 1023)] - 23.84).abs() < 1e-2);
     }
 }
