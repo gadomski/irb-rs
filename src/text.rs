@@ -1,6 +1,8 @@
 //! Read text files exported from InfraTec software.
 
 use {Error, Image, Result};
+use std::error;
+use std::fmt;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -28,6 +30,28 @@ pub struct File {
 struct Header {
     height: usize,
     width: usize,
+}
+
+impl error::Error for HeaderError {
+    fn description(&self) -> &str {
+        match *self {
+            HeaderError::MissingHeight => "height is missing from the header",
+            HeaderError::MissingEqualsSign(_) => "the header row doesn't have an equals sign for assignment",
+            HeaderError::MissingWidth => "width is missing from the header",
+        }
+    }
+}
+
+impl fmt::Display for HeaderError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            HeaderError::MissingHeight => write!(f, "height is missing from the header"),
+            HeaderError::MissingEqualsSign(ref row) => {
+                write!(f, "this row doesn't have an equals sign: {}", row)
+            }
+            HeaderError::MissingWidth => write!(f, "width is missing from the header"),
+        }
+    }
 }
 
 impl File {
