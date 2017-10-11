@@ -14,7 +14,8 @@ pub struct Image {
 impl Image {
     /// Creates a new image from the provided bytes, width, and height.
     ///
-    /// Returns an error if the length of the data does equal width * height.
+    /// Returns an error if the length of the data does equal width * height. Data are expected to
+    /// be in row-major order.
     ///
     /// # Examples
     ///
@@ -37,19 +38,36 @@ impl Image {
                })
         }
     }
+
+    /// Gets the color at the provided row and column.
+    ///
+    /// Returns None if the row and column are out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use irb::Image;
+    /// let image = Image::new(vec![1., 2., 3., 4.], 2, 2).unwrap();
+    /// assert_eq!(1., *image.get(0, 0).unwrap());
+    /// assert_eq!(2., *image.get(0, 1).unwrap());
+    /// assert_eq!(None, image.get(2, 2));
+    /// ```
+    pub fn get(&self, row: usize, col: usize) -> Option<&f32> {
+        if row < self.height && col < self.width {
+            self.data.get(row * self.width + col)
+        } else {
+            None
+        }
+    }
 }
 
 impl Index<(usize, usize)> for Image {
     type Output = f32;
     fn index(&self, (row, col): (usize, usize)) -> &f32 {
-        if row < self.height && col < self.width {
-            &self.data[row * self.width + col]
-        } else {
-            panic!("Index out of bounds for {}x{} image: ({}, {})",
-                   self.height,
-                   self.width,
-                   row,
-                   col);
-        }
+        self.get(row, col).expect(&format!("Index out of bounds for {}x{} image: ({}, {})",
+                                           self.height,
+                                           self.width,
+                                           row,
+                                           col))
     }
 }

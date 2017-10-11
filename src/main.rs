@@ -35,8 +35,8 @@ fn main() {
             .unwrap()
             .parse()
             .unwrap();
-        if x < image.width && y < image.height {
-            println!("{}", image[(y, x)]);
+        if let Some(color) = image.get(x, y) {
+            println!("{}", color);
         } else {
             panic!("Coordinates ({}, {}) out of image dimensions {} x {}",
                    x,
