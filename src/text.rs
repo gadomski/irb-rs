@@ -180,21 +180,17 @@ mod tests {
         let image = File::open("data/image.txt").unwrap().into_image().unwrap();
         assert_eq!(1024, image.width);
         assert_eq!(768, image.height);
-        assert!((image[(0, 0)] - 0.64).abs() < 1e-2);
-        assert!((image[(0, 1)] - 0.58).abs() < 1e-2);
-        assert!((image[(1, 0)] - 0.57).abs() < 1e-2,
-                "Pixel was {}",
-                image[(1, 0)]);
-        assert!((image[(767, 1023)] - -37.49).abs() < 1e-2,
-                "Pixel was: {}",
-                image[(767, 1023)]);
+        assert_relative_eq!(image[(0, 0)], 0.64, epsilon = 1e-2);
+        assert_relative_eq!(image[(0, 1)], 0.58, epsilon = 1e-2);
+        assert_relative_eq!(image[(1, 0)], 0.57, epsilon = 1e-2);
+        assert_relative_eq!(image[(767, 1023)], -37.49, epsilon = 1e-2);
 
         let image2 = File::open("data/image2.csv").unwrap().into_image().unwrap();
         assert_eq!(1024, image2.width);
         assert_eq!(768, image2.height);
-        assert!((image2[(0, 0)] - -38.64).abs() < 1e-2);
-        assert!((image2[(0, 1)] - -38.74).abs() < 1e-2);
-        assert!((image2[(1, 0)] - -39.15).abs() < 1e-2);
-        assert!((image2[(767, 1023)] - 23.84).abs() < 1e-2);
+        assert_relative_eq!(image2[(0, 0)], -38.64, epsilon = 1e-2);
+        assert_relative_eq!(image2[(0, 1)], -38.74, epsilon = 1e-2);
+        assert_relative_eq!(image2[(1, 0)], -39.15, epsilon = 1e-2);
+        assert_relative_eq!(image2[(767, 1023)], 23.84, epsilon = 1e-2);
     }
 }
