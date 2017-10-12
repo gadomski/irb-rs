@@ -32,14 +32,14 @@ impl Image {
             Err(Error::ImageLength(data.len(), width * height))
         } else {
             Ok(Image {
-                   data: data,
-                   height: height,
-                   width: width,
-               })
+                data: data,
+                height: height,
+                width: width,
+            })
         }
     }
 
-    /// Gets the color at the provided row and column.
+    /// Gets the color at the provided column and row.
     ///
     /// Returns None if the row and column are out of bounds.
     ///
@@ -49,10 +49,11 @@ impl Image {
     /// use irb::Image;
     /// let image = Image::new(vec![1., 2., 3., 4.], 2, 2).unwrap();
     /// assert_eq!(1., *image.get(0, 0).unwrap());
-    /// assert_eq!(2., *image.get(0, 1).unwrap());
+    /// assert_eq!(2., *image.get(1, 0).unwrap());
+    /// assert_eq!(3., *image.get(0, 1).unwrap());
     /// assert_eq!(None, image.get(2, 2));
     /// ```
-    pub fn get(&self, row: usize, col: usize) -> Option<&f32> {
+    pub fn get(&self, col: usize, row: usize) -> Option<&f32> {
         if row < self.height && col < self.width {
             self.data.get(row * self.width + col)
         } else {
@@ -63,11 +64,13 @@ impl Image {
 
 impl Index<(usize, usize)> for Image {
     type Output = f32;
-    fn index(&self, (row, col): (usize, usize)) -> &f32 {
-        self.get(row, col).expect(&format!("Index out of bounds for {}x{} image: ({}, {})",
-                                           self.height,
-                                           self.width,
-                                           row,
-                                           col))
+    fn index(&self, (col, row): (usize, usize)) -> &f32 {
+        self.get(col, row).expect(&format!(
+            "Index out of bounds for {}x{} image: ({}, {})",
+            self.width,
+            self.height,
+            row,
+            col
+        ))
     }
 }

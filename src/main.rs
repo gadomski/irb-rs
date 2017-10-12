@@ -7,42 +7,46 @@ use irb::text::File;
 fn main() {
     let matches = App::new("InfraTec .irb files")
         .author("Pete Gadomski <pete@gadom.ski>")
-        .subcommand(SubCommand::with_name("query")
-                        .about("query the image value at a given pixel")
-                        .arg(Arg::with_name("INFILE")
-                                 .help("image file path")
-                                 .required(true)
-                                 .index(1))
-                        .arg(Arg::with_name("X")
-                                 .help("x coordinate to query")
-                                 .required(true)
-                                 .index(2))
-                        .arg(Arg::with_name("Y")
-                                 .help("y coordinate to query")
-                                 .required(true)
-                                 .index(3)))
+        .subcommand(
+            SubCommand::with_name("query")
+                .about("query the image value at a given pixel")
+                .arg(
+                    Arg::with_name("INFILE")
+                        .help("image file path")
+                        .required(true)
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("X")
+                        .help("x coordinate to query")
+                        .required(true)
+                        .index(2),
+                )
+                .arg(
+                    Arg::with_name("Y")
+                        .help("y coordinate to query")
+                        .required(true)
+                        .index(3),
+                ),
+        )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("query") {
         let infile =
             File::open(matches.value_of("INFILE").unwrap()).expect("Unable to open infile");
         let image = infile.into_image().expect("Unable to read file into image");
-        let x: usize = matches.value_of("X")
-            .unwrap()
-            .parse()
-            .unwrap();
-        let y: usize = matches.value_of("Y")
-            .unwrap()
-            .parse()
-            .unwrap();
+        let x: usize = matches.value_of("X").unwrap().parse().unwrap();
+        let y: usize = matches.value_of("Y").unwrap().parse().unwrap();
         if let Some(color) = image.get(x, y) {
             println!("{}", color);
         } else {
-            panic!("Coordinates ({}, {}) out of image dimensions {} x {}",
-                   x,
-                   y,
-                   image.width,
-                   image.height);
+            panic!(
+                "Coordinates ({}, {}) out of image dimensions {} x {}",
+                x,
+                y,
+                image.width,
+                image.height
+            );
         }
     }
 }

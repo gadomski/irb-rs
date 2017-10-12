@@ -36,7 +36,9 @@ impl error::Error for HeaderError {
     fn description(&self) -> &str {
         match *self {
             HeaderError::MissingHeight => "height is missing from the header",
-            HeaderError::MissingEqualsSign(_) => "the header row doesn't have an equals sign for assignment",
+            HeaderError::MissingEqualsSign(_) => {
+                "the header row doesn't have an equals sign for assignment"
+            }
             HeaderError::MissingWidth => "width is missing from the header",
         }
     }
@@ -67,9 +69,9 @@ impl File {
         let mut reader = BufReader::new(fs::File::open(path)?);
         let header = Header::new(&mut reader)?;
         Ok(File {
-               header: header,
-               reader: reader,
-           })
+            header: header,
+            reader: reader,
+        })
     }
 
     /// Reads this file's data and returns the underlying image.
@@ -142,9 +144,9 @@ impl Header {
         if let Some(width) = width {
             if let Some(height) = height {
                 Ok(Header {
-                       width: width,
-                       height: height,
-                   })
+                    width: width,
+                    height: height,
+                })
             } else {
                 Err(HeaderError::MissingWidth.into())
             }
@@ -154,8 +156,9 @@ impl Header {
     }
 
     fn parse_value<T>(s: &str) -> Result<T>
-        where T: FromStr,
-              Error: From<<T as FromStr>::Err>
+    where
+        T: FromStr,
+        Error: From<<T as FromStr>::Err>,
     {
         if let Some(value) = s.split('=').skip(1).next() {
             Ok(value.parse()?)
@@ -181,16 +184,16 @@ mod tests {
         assert_eq!(1024, image.width);
         assert_eq!(768, image.height);
         assert_relative_eq!(image[(0, 0)], 0.64, epsilon = 1e-2);
-        assert_relative_eq!(image[(0, 1)], 0.58, epsilon = 1e-2);
-        assert_relative_eq!(image[(1, 0)], 0.57, epsilon = 1e-2);
-        assert_relative_eq!(image[(767, 1023)], -37.49, epsilon = 1e-2);
+        assert_relative_eq!(image[(1, 0)], 0.58, epsilon = 1e-2);
+        assert_relative_eq!(image[(0, 1)], 0.57, epsilon = 1e-2);
+        assert_relative_eq!(image[(1023, 767)], -37.49, epsilon = 1e-2);
 
         let image2 = File::open("data/image2.csv").unwrap().into_image().unwrap();
         assert_eq!(1024, image2.width);
         assert_eq!(768, image2.height);
         assert_relative_eq!(image2[(0, 0)], -38.64, epsilon = 1e-2);
-        assert_relative_eq!(image2[(0, 1)], -38.74, epsilon = 1e-2);
-        assert_relative_eq!(image2[(1, 0)], -39.15, epsilon = 1e-2);
-        assert_relative_eq!(image2[(767, 1023)], 23.84, epsilon = 1e-2);
+        assert_relative_eq!(image2[(1, 0)], -38.74, epsilon = 1e-2);
+        assert_relative_eq!(image2[(0, 1)], -39.15, epsilon = 1e-2);
+        assert_relative_eq!(image2[(1023, 767)], 23.84, epsilon = 1e-2);
     }
 }
