@@ -1,2 +1,11 @@
-[workspace]
-members = ["irbacs-sys", "irb"]
+[package]
+name = "irb"
+version = "0.1.0"
+authors = ["Pete Gadomski <pete.gadomski@gmail.com>"]
+
+[dependencies]
+irbacs-sys = { git = "https://github.com/gadomski/irbacs-sys", optional = true }
+quick-error = "1.2"
+
+[dev-dependencies]
+approx = "0.1"
