@@ -5,7 +5,7 @@ Without InfraTec's SDK, the most you can do is read text files created by the In
 With their SDK, you can read the binary .irb files themselves, via the [irbasc-sys](https://github.com/gadomski/irbasc-sys) crate.
 
 **This project is not created by InfraTec.
-Please do not contact Infratec with any questions or issues.**
+Please do not contact InfraTec with any questions or issues.**
 
 ## Using irbasc
 
