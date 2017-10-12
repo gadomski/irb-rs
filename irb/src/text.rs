@@ -1,95 +1,38 @@
 //! Read text files exported from InfraTec software.
+//!
+//! This doesn't need the external **irbasc-sys** project.
 
-use {Error, Image, Result};
-use std::error;
-use std::fmt;
-use std::fs;
+use {Error, Result};
 use std::io::{BufRead, BufReader};
+use std::ops::Index;
 use std::path::Path;
 use std::str::FromStr;
 
-/// The text header is incorrect.
-#[derive(Debug)]
-pub enum HeaderError {
-    /// The header is missing a height.
-    MissingHeight,
-    /// An assignment field does not have an equals sign.
-    MissingEqualsSign(String),
-    /// The header is missing a width.
-    MissingWidth,
-}
-
 /// A text irb file.
 #[derive(Debug)]
-pub struct File {
-    header: Header,
-    reader: BufReader<fs::File>,
-}
-
-#[derive(Debug)]
-struct Header {
+pub struct Irb {
     height: usize,
     width: usize,
+    data: Vec<f64>,
 }
 
-impl error::Error for HeaderError {
-    fn description(&self) -> &str {
-        match *self {
-            HeaderError::MissingHeight => "height is missing from the header",
-            HeaderError::MissingEqualsSign(_) => {
-                "the header row doesn't have an equals sign for assignment"
-            }
-            HeaderError::MissingWidth => "width is missing from the header",
-        }
-    }
-}
-
-impl fmt::Display for HeaderError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            HeaderError::MissingHeight => write!(f, "height is missing from the header"),
-            HeaderError::MissingEqualsSign(ref row) => {
-                write!(f, "this row doesn't have an equals sign: {}", row)
-            }
-            HeaderError::MissingWidth => write!(f, "width is missing from the header"),
-        }
-    }
-}
-
-impl File {
+impl Irb {
     /// Opens a new text .irb file.
     ///
     /// # Examples
     ///
     /// ```
-    /// use irb::text::File;
-    /// let file = File::open("data/image.txt").unwrap();
+    /// use irb::text::Irb;
+    /// let irb = Irb::from_path("data/image.txt").unwrap();
     /// ```
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<File> {
-        let mut reader = BufReader::new(fs::File::open(path)?);
-        let header = Header::new(&mut reader)?;
-        Ok(File {
-            header: header,
-            reader: reader,
-        })
-    }
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Irb> {
+        use std::fs::File;
 
-    /// Reads this file's data and returns the underlying image.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use irb::text::File;
-    /// let image = File::open("data/image.txt").and_then(|file| file.into_image()).unwrap();
-    /// ```
-    pub fn into_image(self) -> Result<Image> {
-        use Error;
-
-        let width = self.width();
-        let height = self.height();
-        let mut data: Vec<f32> = Vec::new();
+        let mut read = BufReader::new(File::open(path)?);
+        let (width, height) = Irb::read_header(&mut read)?;
+        let mut data = Vec::with_capacity(width * height);
         let mut rows = 0;
-        for line in self.reader.lines() {
+        for line in read.lines() {
             let mut cols = 0;
             for text in line?.replace(';', " ").split_whitespace() {
                 let n = text.replace(',', ".").parse()?;
@@ -97,27 +40,38 @@ impl File {
                 cols += 1;
             }
             if cols != width {
-                return Err(Error::ImageWidth(cols, width));
+                return Err(Error::TextDataParse(
+                    format!("Expected {} cols, got {}", width, cols),
+                ));
             }
             rows += 1;
         }
         if rows != height {
-            return Err(Error::ImageHeight(rows, height));
+            return Err(Error::TextDataParse(
+                format!("Expected {} rows, got {}", width, rows),
+            ));
         }
-        Image::new(data, width, height)
+        Ok(Irb {
+            height: height,
+            width: width,
+            data: data,
+        })
     }
 
-    fn height(&self) -> usize {
-        self.header.height
+    /// Returns the temperature at the given column and row.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use irb::text::Irb;
+    /// let irb = Irb::from_path("data/image.txt").unwrap();
+    /// let temperature = irb.temperature(0, 0).unwrap();
+    /// ```
+    pub fn temperature(&self, col: usize, row: usize) -> Option<&f64> {
+        self.data.get(row * self.width + col)
     }
 
-    fn width(&self) -> usize {
-        self.header.width
-    }
-}
-
-impl Header {
-    fn new<R: BufRead>(read: R) -> Result<Header> {
+    fn read_header<R: BufRead>(read: R) -> Result<(usize, usize)> {
         use std::io::ErrorKind;
 
         let mut width = None;
@@ -126,9 +80,9 @@ impl Header {
             match line {
                 Ok(line) => {
                     if line.starts_with("ImageWidth") {
-                        width = Some(Header::parse_value(&line)?);
+                        width = Some(parse_value(&line)?);
                     } else if line.starts_with("ImageHeight") {
-                        height = Some(Header::parse_value(&line)?);
+                        height = Some(parse_value(&line)?);
                     } else if line == "[Data]" {
                         break;
                     }
@@ -143,28 +97,36 @@ impl Header {
         }
         if let Some(width) = width {
             if let Some(height) = height {
-                Ok(Header {
-                    width: width,
-                    height: height,
-                })
+                Ok((width, height))
             } else {
-                Err(HeaderError::MissingWidth.into())
+                Err(Error::TextHeaderParse("Missing height".to_string()))
             }
         } else {
-            Err(HeaderError::MissingWidth.into())
+            Err(Error::TextHeaderParse("Missing width".to_string()))
         }
     }
+}
 
-    fn parse_value<T>(s: &str) -> Result<T>
-    where
-        T: FromStr,
-        Error: From<<T as FromStr>::Err>,
-    {
-        if let Some(value) = s.split('=').skip(1).next() {
-            Ok(value.parse()?)
-        } else {
-            Err(HeaderError::MissingEqualsSign(s.to_string()).into())
-        }
+impl Index<(usize, usize)> for Irb {
+    type Output = f64;
+    fn index(&self, (col, row): (usize, usize)) -> &f64 {
+        self.temperature(col, row).expect(&format!(
+            "Index out of bounds: ({}, {})",
+            col,
+            row
+        ))
+    }
+}
+
+fn parse_value<T>(s: &str) -> Result<T>
+where
+    T: FromStr,
+    Error: From<<T as FromStr>::Err>,
+{
+    if let Some(value) = s.split('=').skip(1).next() {
+        Ok(value.parse()?)
+    } else {
+        Err(Error::TextHeaderParse(s.to_string()))
     }
 }
 
@@ -173,27 +135,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn open() {
-        File::open("data/image.txt").unwrap();
-        File::open("data/image2.csv").unwrap();
+    fn from_path() {
+        Irb::from_path("data/image.txt").unwrap();
+        Irb::from_path("data/image2.csv").unwrap();
+        assert!(Irb::from_path("data/image2.irb").is_err());
     }
 
     #[test]
-    fn into_image() {
-        let image = File::open("data/image.txt").unwrap().into_image().unwrap();
-        assert_eq!(1024, image.width);
-        assert_eq!(768, image.height);
-        assert_relative_eq!(image[(0, 0)], 0.64, epsilon = 1e-2);
-        assert_relative_eq!(image[(1, 0)], 0.58, epsilon = 1e-2);
-        assert_relative_eq!(image[(0, 1)], 0.57, epsilon = 1e-2);
-        assert_relative_eq!(image[(1023, 767)], -37.49, epsilon = 1e-2);
+    fn temperature() {
+        let irb = Irb::from_path("data/image.txt").unwrap();
+        assert_eq!(1024, irb.width);
+        assert_eq!(768, irb.height);
+        assert_relative_eq!(irb[(0, 0)], 0.64, epsilon = 1e-2);
+        assert_relative_eq!(irb[(1, 0)], 0.58, epsilon = 1e-2);
+        assert_relative_eq!(irb[(0, 1)], 0.57, epsilon = 1e-2);
+        assert_relative_eq!(irb[(1023, 767)], -37.49, epsilon = 1e-2);
 
-        let image2 = File::open("data/image2.csv").unwrap().into_image().unwrap();
-        assert_eq!(1024, image2.width);
-        assert_eq!(768, image2.height);
-        assert_relative_eq!(image2[(0, 0)], -38.64, epsilon = 1e-2);
-        assert_relative_eq!(image2[(1, 0)], -38.74, epsilon = 1e-2);
-        assert_relative_eq!(image2[(0, 1)], -39.15, epsilon = 1e-2);
-        assert_relative_eq!(image2[(1023, 767)], 23.84, epsilon = 1e-2);
+        let irb2 = Irb::from_path("data/image2.csv").unwrap();
+        assert_eq!(1024, irb2.width);
+        assert_eq!(768, irb2.height);
+        assert_relative_eq!(irb2[(0, 0)], -38.64, epsilon = 1e-2);
+        assert_relative_eq!(irb2[(1, 0)], -38.74, epsilon = 1e-2);
+        assert_relative_eq!(irb2[(0, 1)], -39.15, epsilon = 1e-2);
+        assert_relative_eq!(irb2[(1023, 767)], 23.84, epsilon = 1e-2);
     }
 }

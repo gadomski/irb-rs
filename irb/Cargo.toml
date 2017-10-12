@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["Pete Gadomski <pete.gadomski@gmail.com>"]
 
 [dependencies]
-clap = "2.26"
+irbacs-sys = { path = "../irbacs-sys", optional = true }
+quick-error = "1.2"
 
 [dev-dependencies]
 approx = "0.1"
