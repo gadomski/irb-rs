@@ -1,26 +1,22 @@
 # irb-rs
 
-Two-crate workspace to read .irb files from [InfraTec](http://www.infratec.eu/).
-You'll need the libraries from InfraTec for some of these codes to work.
-The **irb** crate does include a text reader that can be used to read text files exported from InfraTec software.
+Reads .irb files from [InfraTec](http://www.infratec.eu/).
+Without InfraTec's SDK, the most you can do is read text files created by the InfraTec software.
+With their SDK, you can read the binary .irb files themselves, via the [irbasc-sys](https://github.com/gadomski/irbasc-sys) crate.
 
 **This project is not created by InfraTec.
 Please do not contact Infratec with any questions or issues.**
 
-### irbasc-sys
+## Using irbasc
 
-Sys-crate interface for the InfraTec irbasc library.
-At this point, this interface will only work for the Linux64-bit library.
-Make sure the header file, `irbacs_v2.h`, is on your include path, and that the `libarbacs_l64.so` is on your library and load library paths.
-
-### irb
-
-A Rust-friendly library that wraps **irbasc-sys** in a nice struct-base interface.
-
-## Running tests
-
-Because **libirbasc** is not thread-safe, any tests with **irbasc-sys** need to be run single-threaded:
+To build with SDK support, use the "irbasc-sys" feature:
 
 ```bash
-cargo test -p irb -- --test-threads=1
+cargo build --features "irbasc-sys"
+```
+
+Because **libirbasc** is not thread-safe, tests with **irbasc-sys** need to be run single-threaded:
+
+```bash
+cargo test --features "irbasc-sys" -- --test-threads=1
 ```
