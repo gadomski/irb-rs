@@ -136,6 +136,11 @@ impl Irb {
     pub fn temperature(&self, col: i32, row: i32) -> Result<f64> {
         let result = unsafe { irbacs_sys::getTempXY(self.handle, col, row) };
         if result == 0. {
+            if let Ok(width) = self.image_width() {
+                if let Ok(height) = self.image_height() {
+                    eprintln!("Image is {}x{}", width, height);
+                }
+            }
             Err(Error::IrbacsSys(format!("getTempXY({}, {})", col, row)))
         } else {
             Ok(result)
