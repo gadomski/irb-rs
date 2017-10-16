@@ -32,6 +32,13 @@ quick_error! {
             display("FFI nul error: {}", err)
             from()
         }
+        /// Wrapper around `std::ffi::IntoStringError`.
+        FfiIntoString(err: std::ffi::IntoStringError) {
+            cause(err)
+            description(err.description())
+            display("FFI into string error: {}", err)
+            from()
+        }
         /// Wrapper around `std::io::Error`.
         Io(err: std::io::Error) {
             cause(err)

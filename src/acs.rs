@@ -3,6 +3,9 @@
 use {Error, Result};
 use irbacs_sys;
 use std::ffi::CString;
+use std::os::raw::c_char;
+
+const MAX_PARAM_STRING: usize = 256;
 
 /// Returns the dll version.
 ///
@@ -85,6 +88,19 @@ impl Irb {
     /// ```
     pub fn image_height(&self) -> Result<i32> {
         self.param(1).map(|n| n as i32)
+    }
+
+    /// Returns the camera name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use irb::Irb;
+    /// let irb = Irb::from_path("data/image.irb").unwrap();
+    /// let camera_name = irb.camera_name().unwrap();
+    /// ```
+    pub fn camera_name(&self) -> Result<String> {
+        self.param_s(11)
     }
 
     /// Returns the frame count.
@@ -173,12 +189,31 @@ impl Irb {
             Err(Error::IrbacsSys(format!("getParam({})", what)))
         }
     }
+
+    fn param_s(&self, what: i32) -> Result<String> {
+        let mut param = [0; MAX_PARAM_STRING];
+        if unsafe { irbacs_sys::getParamS(self.handle, what, param.as_mut_ptr()) } == 1 {
+            char_buf_to_string(&param)
+        } else {
+            Err(Error::IrbacsSys(format!("getParamS({})", what)))
+        }
+    }
 }
 
 impl Drop for Irb {
     fn drop(&mut self) {
         unsafe { irbacs_sys::unloadIRB(self.handle) }
     }
+}
+
+fn char_buf_to_string(buf: &[c_char]) -> Result<String> {
+    CString::new(
+        buf.iter()
+            .map(|&n| n as u8)
+            .take_while(|&n| n > 0)
+            .collect::<Vec<_>>(),
+    ).map_err(Error::from)
+        .and_then(|c_string| c_string.into_string().map_err(Error::from))
 }
 
 #[cfg(test)]
@@ -227,5 +262,11 @@ mod tests {
     fn blackbody_temperature() {
         let irb = Irb::from_path("data/image.irb").unwrap();
         assert_relative_eq!(230.5399932861328, irb.blackbody_temperature(0, 0).unwrap());
+    }
+
+    #[test]
+    fn camera_name() {
+        let irb = Irb::from_path("data/image.irb").unwrap();
+        assert_eq!("VARIOCAM_HD", irb.camera_name().unwrap());
     }
 }
