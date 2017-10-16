@@ -1,0 +1,11 @@
+name: irb
+author: Pete Gadomski <pete@gadom.ski>
+about: Inspect .irb files
+subcommands:
+    - info:
+        about: Prints information about an .irb file.
+        args:
+            - FILE:
+                help: The .irb file.
+                required: true
+                index: 1
