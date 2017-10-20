@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 clap = { version = "2.26", features = ["yaml"], optional = true }
-irbacs-sys = { git = "https://github.com/gadomski/irbacs-sys", optional = true }
+irbacs-sys = { path = "irbacs-sys", optional = true }
 quick-error = "1.2"
 
 [dev-dependencies]
@@ -16,3 +16,6 @@ approx = "0.1"
 name = "irb"
 doc = false
 required-features = ["clap", "irbacs-sys"]
+
+[workspace]
+members = ["irbacs-sys"]
