@@ -9,3 +9,18 @@ subcommands:
                 help: The .irb file.
                 required: true
                 index: 1
+    - pixel:
+        about: Prints the temperature value of a given pixel, in °C.
+        args:
+            - FILE:
+                help: The .irb file.
+                required: true
+                index: 1
+            - U:
+                help: The u value of the pixel.
+                required: true
+                index: 2
+            - V:
+                help: The v value of the pixel.
+                required: true
+                index: 3
