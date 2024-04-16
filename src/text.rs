@@ -2,15 +2,16 @@
 //!
 //! This doesn't need the external **irbasc-sys** project.
 
-use {Error, Result};
 use std::io::{BufRead, BufReader};
 use std::ops::Index;
 use std::path::Path;
 use std::str::FromStr;
+use {Error, Result};
 
 /// A text irb file.
 #[derive(Debug)]
 pub struct Irb {
+    #[allow(dead_code)]
     height: usize,
     width: usize,
     data: Vec<f64>,
@@ -40,16 +41,18 @@ impl Irb {
                 cols += 1;
             }
             if cols != width {
-                return Err(Error::TextDataParse(
-                    format!("Expected {} cols, got {}", width, cols),
-                ));
+                return Err(Error::TextDataParse(format!(
+                    "Expected {} cols, got {}",
+                    width, cols
+                )));
             }
             rows += 1;
         }
         if rows != height {
-            return Err(Error::TextDataParse(
-                format!("Expected {} rows, got {}", width, rows),
-            ));
+            return Err(Error::TextDataParse(format!(
+                "Expected {} rows, got {}",
+                width, rows
+            )));
         }
         Ok(Irb {
             height: height,
@@ -87,12 +90,10 @@ impl Irb {
                         break;
                     }
                 }
-                Err(err) => {
-                    match err.kind() {
-                        ErrorKind::InvalidData => continue,
-                        _ => return Err(err.into()),
-                    }
-                }
+                Err(err) => match err.kind() {
+                    ErrorKind::InvalidData => continue,
+                    _ => return Err(err.into()),
+                },
             }
         }
         if let Some(width) = width {
@@ -110,11 +111,8 @@ impl Irb {
 impl Index<(usize, usize)> for Irb {
     type Output = f64;
     fn index(&self, (col, row): (usize, usize)) -> &f64 {
-        self.temperature(col, row).expect(&format!(
-            "Index out of bounds: ({}, {})",
-            col,
-            row
-        ))
+        self.temperature(col, row)
+            .expect(&format!("Index out of bounds: ({}, {})", col, row))
     }
 }
 

@@ -1,9 +1,9 @@
 //! Wrappers to make **irbasc-sys** play nice.
 
-use {Error, Result};
 use irbacs_sys;
 use std::ffi::CString;
 use std::os::raw::c_char;
+use {Error, Result};
 
 const MAX_PARAM_STRING: usize = 256;
 
@@ -56,9 +56,10 @@ impl Irb {
         let path = CString::new(path)?;
         let result = unsafe { irbacs_sys::loadIRB(path.as_ptr()) };
         if result.is_null() {
-            Err(Error::IrbacsSys(
-                format!("loadIRB: {}", path.to_string_lossy()),
-            ))
+            Err(Error::IrbacsSys(format!(
+                "loadIRB: {}",
+                path.to_string_lossy()
+            )))
         } else {
             Ok(Irb { handle: result })
         }
@@ -207,8 +208,9 @@ fn char_buf_to_string(buf: &[c_char]) -> Result<String> {
             .map(|&n| n as u8)
             .take_while(|&n| n > 0)
             .collect::<Vec<_>>(),
-    ).map_err(Error::from)
-        .and_then(|c_string| c_string.into_string().map_err(Error::from))
+    )
+    .map_err(Error::from)
+    .and_then(|c_string| c_string.into_string().map_err(Error::from))
 }
 
 #[cfg(test)]
